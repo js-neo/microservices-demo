@@ -1,0 +1,10 @@
+
+.idea
+scripts
+project_contents.txt
+script_debug.log
+
+driver-service/node_modules
+notification-service/node_modules
+order-service/node_modules
+

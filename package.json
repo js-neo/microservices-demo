@@ -1,0 +1,10 @@
+{
+  "name": "microservises-demo",
+  "type": "module",
+  "scripts": {
+    "chmod:tree": "chmod +x scripts/collect-contents.sh",
+    "tree": "chmod +x scripts/collect-contents.sh && sh scripts/project-tree.sh",
+    "chmod:content": "chmod +x scripts/collect-contents.sh",
+    "content": "chmod +x scripts/collect-contents.sh && sh scripts/collect-contents.sh"
+  }
+}

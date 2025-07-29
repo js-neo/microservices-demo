@@ -1,0 +1,92 @@
+
+
+services:
+  zookeeper:
+    image: bitnami/zookeeper:3.9
+    ports:
+      - "2181:2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+      - ZOO_4LW_COMMANDS_WHITELIST=*
+    volumes:
+      - zookeeper_data:/bitnami
+    healthcheck:
+      test: ["CMD", "zkServer.sh", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  kafka:
+    image: bitnami/kafka:3.6
+    ports:
+      - "9092:9092"
+      - "9999:9999"
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_BROKER_ID=1
+      - KAFKA_ENABLE_KRAFT=no
+      - KAFKA_JMX_PORT=9999
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+    volumes:
+      - kafka_data:/bitnami
+    healthcheck:
+      test: [ "CMD-SHELL", "kafka-topics.sh --bootstrap-server kafka:9092 --list" ]
+      start_period: 30s
+      interval: 15s
+      timeout: 20s
+      retries: 10
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    restart: unless-stopped
+
+  order-service:
+    build: ./order-service
+    ports:
+      - "3001:3001"
+    environment:
+      - KAFKA_BROKER=kafka:9092
+      - KAFKA_TOPIC_ORDERS=order-created
+      - PORT=3001
+      - KAFKAJS_NO_PARTITIONER_WARNING=1
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  driver-service:
+    build: ./driver-service
+    ports:
+      - "3002:3002"
+    environment:
+      - KAFKA_BROKER=kafka:9092
+      - KAFKA_TOPIC_ORDERS=order-created
+      - PORT=3002
+      - KAFKA_CONSUMER_SESSION_TIMEOUT=30000
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  notification-service:
+    build: ./notification-service
+    environment:
+      - KAFKA_BROKER=kafka:9092
+      - KAFKA_TOPIC_ORDERS=order-created
+      - KAFKA_GROUP_ID=notification-group
+      - KAFKA_CONSUMER_SESSION_TIMEOUT=30000
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  zookeeper_data:
+    driver: local
+  kafka_data:
+    driver: local

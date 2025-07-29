@@ -1,0 +1,7 @@
+{
+  "name": "notification-service",
+  "type": "module",
+  "dependencies": {
+    "kafkajs": "^2.2.4"
+  }
+}
